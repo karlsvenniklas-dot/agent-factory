@@ -8,14 +8,17 @@
 import { useEffect } from 'react';
 import { useSpotifyStore, initializeAuth } from './stores/spotifyStore';
 import { useSpotifyPlayer } from './hooks/useSpotifyPlayer';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { LoginScreen } from './components/LoginScreen';
 import { WinampPlayer } from './components/WinampPlayer/WinampPlayer';
 import { Playlist } from './components/Playlist/Playlist';
 import { Visualizer } from './components/Visualizer/Visualizer';
+import { Equalizer } from './components/Equalizer/Equalizer';
 
 function App() {
   const { isAuthenticated } = useSpotifyStore();
   const { isReady, error: playerError } = useSpotifyPlayer();
+  useKeyboardShortcuts();
 
   // Initialize authentication on mount (restore session if available)
   useEffect(() => {
@@ -44,6 +47,7 @@ function App() {
 
       <WinampPlayer />
       <Visualizer />
+      <Equalizer />
       <Playlist />
     </div>
   );

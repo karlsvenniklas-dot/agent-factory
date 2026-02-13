@@ -9,6 +9,8 @@ export interface Track {
   coverUrl?: string;
 }
 
+export type RepeatMode = 'off' | 'all' | 'one';
+
 export interface PlaybackState {
   isPlaying: boolean;
   currentTrack: Track | null;
@@ -16,6 +18,8 @@ export interface PlaybackState {
   position: number; // current position in seconds
   queue: Track[];
   currentIndex: number;
+  shuffle: boolean;
+  repeat: RepeatMode;
 }
 
 export interface PlayerActions {
@@ -29,6 +33,8 @@ export interface PlayerActions {
   loadTrack: (track: Track) => void;
   addToQueue: (track: Track) => void;
   removeFromQueue: (index: number) => void;
+  toggleShuffle: () => void;
+  cycleRepeat: () => void;
 }
 
 export interface WindowPosition {

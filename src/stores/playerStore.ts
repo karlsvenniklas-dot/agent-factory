@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Track, PlaybackState, PlayerActions } from '../types';
+import type { Track, PlaybackState, PlayerActions, RepeatMode } from '../types';
 import { useSpotifyStore } from './spotifyStore';
 import { createSpotifyApi } from '../lib/spotify/api';
 
@@ -38,6 +38,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   position: 0,
   queue: mockTracks,
   currentIndex: 0,
+  shuffle: false,
+  repeat: 'off' as RepeatMode,
 
   // Actions
   play: () => {
@@ -83,8 +85,21 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
   },
 
   next: () => {
-    const { currentIndex, queue } = get();
-    const nextIndex = (currentIndex + 1) % queue.length;
+    const { currentIndex, queue, shuffle, repeat } = get();
+    let nextIndex: number;
+
+    if (repeat === 'one') {
+      nextIndex = currentIndex;
+    } else if (shuffle) {
+      nextIndex = Math.floor(Math.random() * queue.length);
+    } else {
+      nextIndex = (currentIndex + 1) % queue.length;
+      if (nextIndex === 0 && repeat === 'off') {
+        set({ isPlaying: false, position: 0 });
+        return;
+      }
+    }
+
     set({
       currentIndex: nextIndex,
       currentTrack: queue[nextIndex],
@@ -177,5 +192,15 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     set((state) => ({
       queue: state.queue.filter((_, i) => i !== index),
     }));
+  },
+
+  toggleShuffle: () => {
+    set((state) => ({ shuffle: !state.shuffle }));
+  },
+
+  cycleRepeat: () => {
+    const modes: RepeatMode[] = ['off', 'all', 'one'];
+    const currentIdx = modes.indexOf(get().repeat);
+    set({ repeat: modes[(currentIdx + 1) % modes.length] });
   },
 }));

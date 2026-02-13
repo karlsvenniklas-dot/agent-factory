@@ -230,6 +230,92 @@
   font-size: 24px;
 }
 
+/* Shuffle/Repeat Mode Buttons */
+.player-controls-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player-modes {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mode-btn {
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  color: #555;
+  font-family: 'Courier New', monospace;
+  font-size: 9px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 2px 10px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.mode-btn:hover {
+  border-color: #00ff00;
+  color: #00aa00;
+}
+
+.mode-btn.active {
+  color: #00ff00;
+  border-color: #00ff00;
+  background: #003300;
+  box-shadow: 0 0 4px rgba(0, 255, 0, 0.4);
+  text-shadow: 0 0 4px #00ff00;
+}
+
+/* Album Art */
+.track-info-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.track-cover {
+  flex-shrink: 0;
+}
+
+.track-cover img {
+  display: block;
+  border: 1px solid #00ff00;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.3);
+  image-rendering: auto;
+}
+
+.track-info-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.track-meta {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+}
+
+.time-separator {
+  color: #00ff00;
+  opacity: 0.5;
+  font-size: 10px;
+}
+
+.time-total {
+  color: #00ff00;
+  opacity: 0.5;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+}
+
 /* Sliders Section */
 .player-sliders {
   display: flex;
@@ -347,6 +433,27 @@
   color: #00ff00;
 }
 
+.playlist-search {
+  width: 100%;
+  margin-top: 4px;
+  background: #000;
+  color: #00ff00;
+  border: 1px solid #333;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 3px 6px;
+  outline: none;
+}
+
+.playlist-search:focus {
+  border-color: #00ff00;
+  box-shadow: 0 0 4px rgba(0, 255, 0, 0.3);
+}
+
+.playlist-search::placeholder {
+  color: #005500;
+}
+
 .playlist-loading {
   color: #00ff00;
   font-size: 12px;
@@ -438,6 +545,131 @@
   .playlist-window {
     width: 90vw !important;
   }
+}
+
+/* ============================================
+   EQUALIZER WINDOW
+   ============================================ */
+
+.eq-window .window-content {
+  padding: 4px 8px;
+  background: #000;
+}
+
+.eq-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.eq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 0;
+  margin-bottom: 4px;
+}
+
+.eq-label {
+  color: #00ff00;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+.eq-toggle,
+.eq-reset {
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  color: #555;
+  font-family: 'Courier New', monospace;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 1px 6px;
+  cursor: pointer;
+}
+
+.eq-toggle:hover,
+.eq-reset:hover {
+  border-color: #00ff00;
+  color: #00aa00;
+}
+
+.eq-toggle.active {
+  color: #00ff00;
+  border-color: #00ff00;
+  background: #003300;
+}
+
+.eq-sliders {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 1;
+}
+
+.eq-band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.eq-divider {
+  width: 1px;
+  height: 60px;
+  background: #333;
+  margin: 0 2px;
+}
+
+.eq-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 8px;
+  height: 60px;
+  background: linear-gradient(to top, #003300, #1a1a1a, #330000);
+  border: 1px solid #333;
+  outline: none;
+  cursor: pointer;
+}
+
+.eq-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 6px;
+  background: linear-gradient(180deg, #00ff00 0%, #00cc00 100%);
+  border: 1px solid #00ff00;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 255, 0, 0.6);
+}
+
+.eq-slider::-moz-range-thumb {
+  width: 12px;
+  height: 6px;
+  background: linear-gradient(180deg, #00ff00 0%, #00cc00 100%);
+  border: 1px solid #00ff00;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(0, 255, 0, 0.6);
+}
+
+.eq-slider:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.eq-freq {
+  color: #00ff00;
+  font-size: 7px;
+  margin-top: 2px;
+  opacity: 0.6;
+}
+
+.preamp-band .eq-freq {
+  color: #ffff00;
+  opacity: 0.8;
 }
 
 /* ============================================

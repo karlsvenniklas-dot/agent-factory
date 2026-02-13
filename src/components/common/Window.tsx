@@ -21,6 +21,8 @@ export function Window({
 }: WindowProps) {
   const { position, isDragging, dragRef, handleMouseDown } = useDraggable({
     initialPosition,
+    width,
+    height,
   });
 
   return (
