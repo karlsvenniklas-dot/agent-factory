@@ -132,8 +132,14 @@ export function LoginScreen() {
           Login with Spotify
         </button>
 
+        <button className="login-button dev-mode" onClick={() => {
+          useSpotifyStore.setState({ isAuthenticated: true });
+        }}>
+          Dev Mode (Mock Data)
+        </button>
+
         <div className="info-box">
-          <p>This app requires a Spotify Premium account to use the Web Playback SDK.</p>
+          <p>This app requires a Spotify Premium account for full playback. Use Dev Mode to preview the UI.</p>
         </div>
       </div>
     </div>
