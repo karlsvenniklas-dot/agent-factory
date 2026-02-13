@@ -1,66 +1,80 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Window } from '../common/Window';
 import { usePlayerStore } from '../../stores/playerStore';
+import { useVisualizerStore } from '../../stores/visualizerStore';
+import { AudioPipeline } from '../../lib/visualizer/AudioPipeline';
+import { VisualizerEngine } from '../../lib/visualizer/VisualizerEngine';
+import '../../lib/visualizer/renderers'; // Register all renderers
 
 /**
- * Canvas-based audio visualizer
- * Placeholder implementation - will be enhanced by Canvas Visualizer Developer
+ * Canvas-based audio visualizer using the modular preset system
+ * Click to cycle through presets
  */
 export function Visualizer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const engineRef = useRef<VisualizerEngine | null>(null);
+  const pipelineRef = useRef<AudioPipeline | null>(null);
 
+  const isPlaying = usePlayerStore((state) => state.isPlaying);
+  const activePreset = useVisualizerStore((state) => state.activePreset);
+  const nextPreset = useVisualizerStore((state) => state.nextPreset);
+  const setIsRunning = useVisualizerStore((state) => state.setIsRunning);
+
+  const [presetName, setPresetName] = useState<string>('');
+
+  // Initialize engine and pipeline
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    // Create audio pipeline (mock mode for now)
+    const pipeline = new AudioPipeline(2048);
+    pipelineRef.current = pipeline;
 
-    let animationId: number;
+    // Create visualizer engine
+    const engine = new VisualizerEngine(canvas, pipeline);
+    engineRef.current = engine;
 
-    const draw = () => {
-      const width = canvas.width;
-      const height = canvas.height;
+    // Set initial preset
+    if (activePreset) {
+      engine.setPreset(activePreset, 0); // No transition on initial load
+      setPresetName(activePreset.name);
+    }
 
-      // Clear canvas
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, width, height);
+    // Start engine
+    engine.start();
+    setIsRunning(true);
 
-      if (isPlaying) {
-        // Simple placeholder visualization
-        const barCount = 20;
-        const barWidth = width / barCount;
-
-        for (let i = 0; i < barCount; i++) {
-          const barHeight = Math.random() * height * 0.8;
-          const x = i * barWidth;
-          const y = height - barHeight;
-
-          // Green gradient (Winamp style)
-          const gradient = ctx.createLinearGradient(0, y, 0, height);
-          gradient.addColorStop(0, '#00ff00');
-          gradient.addColorStop(1, '#003300');
-
-          ctx.fillStyle = gradient;
-          ctx.fillRect(x, y, barWidth - 2, barHeight);
-        }
-      } else {
-        // Show static bars when paused
-        ctx.fillStyle = '#003300';
-        const centerY = height / 2;
-        ctx.fillRect(0, centerY - 2, width, 4);
-      }
-
-      animationId = requestAnimationFrame(draw);
-    };
-
-    draw();
-
+    // Cleanup
     return () => {
-      cancelAnimationFrame(animationId);
+      engine.dispose();
+      pipeline.dispose();
+      engineRef.current = null;
+      pipelineRef.current = null;
+      setIsRunning(false);
     };
+  }, []); // Only run once on mount
+
+  // Update preset when changed
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine || !activePreset) return;
+
+    engine.setPreset(activePreset, 500); // 500ms transition
+    setPresetName(activePreset.name);
+  }, [activePreset]);
+
+  // Handle play/pause (engine keeps running, renderers react to audio)
+  useEffect(() => {
+    // The engine is always running, but renderers will show different
+    // visuals based on the audio data (which is all zeros when paused in real mode)
+    // In mock mode, it keeps generating data regardless of play state
   }, [isPlaying]);
+
+  // Handle preset cycling on click
+  const handleClick = () => {
+    nextPreset();
+  };
 
   return (
     <Window
@@ -70,12 +84,35 @@ export function Visualizer() {
       height={116}
       className="visualizer-window"
     >
-      <canvas
-        ref={canvasRef}
-        width={275}
-        height={80}
-        className="visualizer-canvas"
-      />
+      <div style={{ position: 'relative' }}>
+        <canvas
+          ref={canvasRef}
+          width={275}
+          height={80}
+          className="visualizer-canvas"
+          onClick={handleClick}
+          style={{
+            cursor: 'pointer',
+            display: 'block',
+          }}
+          title={`Current: ${presetName}\nClick to change preset`}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '4px',
+            left: '4px',
+            color: '#00ff00',
+            fontSize: '10px',
+            fontFamily: 'monospace',
+            textShadow: '0 0 3px #000, 1px 1px 0 #000',
+            pointerEvents: 'none',
+            opacity: 0.8,
+          }}
+        >
+          {presetName}
+        </div>
+      </div>
     </Window>
   );
 }
