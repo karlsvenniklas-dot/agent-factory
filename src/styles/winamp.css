@@ -326,6 +326,35 @@
   letter-spacing: 1px;
 }
 
+.playlist-selector {
+  width: 100%;
+  background: #000;
+  color: #00ff00;
+  border: 1px solid #00ff00;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 2px 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+.playlist-selector:focus {
+  box-shadow: 0 0 4px rgba(0, 255, 0, 0.5);
+}
+
+.playlist-selector option {
+  background: #000;
+  color: #00ff00;
+}
+
+.playlist-loading {
+  color: #00ff00;
+  font-size: 12px;
+  padding: 20px;
+  text-align: center;
+  opacity: 0.7;
+}
+
 .playlist-items {
   flex: 1;
   overflow-y: auto;
@@ -409,6 +438,40 @@
   .playlist-window {
     width: 90vw !important;
   }
+}
+
+/* ============================================
+   STATUS MESSAGES
+   ============================================ */
+
+.player-error {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #330000;
+  border: 1px solid #ff0000;
+  color: #ff0000;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 6px 16px;
+  z-index: 1000;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+}
+
+.player-initializing {
+  position: fixed;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a00;
+  border: 1px solid #ffff00;
+  color: #ffff00;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 6px 16px;
+  z-index: 1000;
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.3);
 }
 
 /* Prevent text selection during drag */

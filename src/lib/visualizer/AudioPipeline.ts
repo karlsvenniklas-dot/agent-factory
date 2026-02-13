@@ -23,6 +23,7 @@ export class AudioPipeline {
   // Mock data generation
   private mockTime = 0;
   private useMockData = true;
+  private paused = false;
 
   constructor(fftSize = 2048) {
     this.fftBuffer = new Uint8Array(fftSize / 2);
@@ -71,10 +72,21 @@ export class AudioPipeline {
   }
 
   /**
+   * Set paused state - when paused, returns silence data
+   */
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+  }
+
+  /**
    * Analyze current audio and return analysis data
    * This is the main method called every frame
    */
   analyze(): AudioAnalysis {
+    if (this.paused) {
+      return this.generateSilence();
+    }
+
     if (this.useMockData || !this.analyser) {
       return this.generateMockAnalysis();
     }
@@ -163,6 +175,21 @@ export class AudioPipeline {
       sum += normalized * normalized;
     }
     return Math.sqrt(sum / this.waveformBuffer.length);
+  }
+
+  /**
+   * Generate silence (flat line) for paused state
+   */
+  private generateSilence(): AudioAnalysis {
+    this.fftBuffer.fill(0);
+    this.waveformBuffer.fill(128); // 128 = center line in unsigned byte
+    return {
+      fft: this.fftBuffer,
+      waveform: this.waveformBuffer,
+      bands: { subBass: 0, bass: 0, mids: 0, treble: 0 },
+      beat: { detected: false, confidence: 0 },
+      rms: 0,
+    };
   }
 
   /**

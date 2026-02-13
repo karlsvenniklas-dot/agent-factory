@@ -64,11 +64,12 @@ export function Visualizer() {
     setPresetName(activePreset.name);
   }, [activePreset]);
 
-  // Handle play/pause (engine keeps running, renderers react to audio)
+  // Sync play/pause state with audio pipeline
   useEffect(() => {
-    // The engine is always running, but renderers will show different
-    // visuals based on the audio data (which is all zeros when paused in real mode)
-    // In mock mode, it keeps generating data regardless of play state
+    const pipeline = pipelineRef.current;
+    if (pipeline) {
+      pipeline.setPaused(!isPlaying);
+    }
   }, [isPlaying]);
 
   // Handle preset cycling on click
