@@ -1,5 +1,5 @@
 ---
-name: ux-c-innovator
+name: ux-designer
 description: Playful Local-Flavor UX-designer som förenar gamification med Kinnareds lokala identitet. Använd PROAKTIVT när design behöver engagera bred publik, skapa minnesvärda moment, eller koppla appen till platsens historia och karaktär. Designar med hembygdskänsla och lekfull energi.
 tools: Read, Write, Edit
 model: sonnet
@@ -118,7 +118,7 @@ Roll: [titel, t.ex. illustratör för lokala ikoner]
 Syfte: [varför behövs denna roll]
 Kärnkompetenser: [vad måste agenten kunna]
 Verktyg: [vilka tools behöver agenten]
-Samarbetar med: ux-innovator
+Samarbetar med: ux-designer
 Prioritet: [hög/medium/låg]
 ```
 

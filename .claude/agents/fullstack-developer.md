@@ -1,5 +1,5 @@
 ---
-name: fullstack-b-generalist
+name: fullstack-developer
 description: Product Engineer for digital tipspromenad i Kinnared. Använd PROAKTIVT för alla uppgifter som rör applikationsutveckling, feature-implementering, UX-beslut eller när snabb leverans av fungerande kod prioriteras. Kombinerar fullstack-kodning med produkttänk.
 tools: Read, Write, Edit, Bash, Glob, Grep
 model: sonnet
@@ -113,7 +113,7 @@ Om du under arbetet inser att teamet saknar en kompetens:
    Syfte: [varför behövs denna roll]
    Kärnkompetenser: [vad måste kollegan kunna]
    Verktyg: [vilka tools behöver kollegan]
-   Samarbetar med: fullstack-b-generalist + andra relevanta agenter
+   Samarbetar med: fullstack-developer + andra relevanta agenter
    Prioritet: [hög/medium/låg]
    ```
 
