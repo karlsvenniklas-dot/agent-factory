@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #0d1a0d;
+  }
+
+  body {
+    @apply bg-white text-gray-900 antialiased;
+  }
+}
+
+@layer utilities {
+  /* Print-utilities för QR-utskrift */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+    .print-break-after {
+      break-after: page;
+    }
+  }
+}
