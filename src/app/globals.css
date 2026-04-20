@@ -3,17 +3,36 @@
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --background: #ffffff;
-    --foreground: #0d1a0d;
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
-    @apply bg-white text-gray-900 antialiased;
+    @apply bg-linen text-soil antialiased;
+    font-family: Inter, system-ui, sans-serif;
+  }
+
+  /* Respektera prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer utilities {
+  /* Safe area för iPhone notch / dynamic island */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   /* Print-utilities för QR-utskrift */
   @media print {
     .no-print {
@@ -21,6 +40,10 @@
     }
     .print-break-after {
       break-after: page;
+    }
+    @page {
+      size: A4;
+      margin: 2cm;
     }
   }
 }

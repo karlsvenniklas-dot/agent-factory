@@ -1,13 +1,18 @@
 "use client";
 
 // Magic link-inloggning. Ny användare registreras automatiskt vid första login.
-// En profil skapas via DB-trigger (se migration) vid första auth.
+// Stöder ?next= för redirect efter auth.
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Mail, Loader2, CheckCircle } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
+import { Suspense } from "react";
 
-export default function LoginPage() {
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get("next") ?? "/play";
+
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
@@ -20,18 +25,18 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
+      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim().toLowerCase(),
         options: {
-          // Skicka tillbaka till /auth/callback som hanterar sessionen
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          // Ny användare skapas automatiskt om e-posten inte finns
+          emailRedirectTo: callbackUrl,
           shouldCreateUser: true,
         },
       });
 
       if (error) {
-        setError(error.message);
+        setError("Kunde inte skicka länken. Kontrollera e-postadressen och försök igen.");
       } else {
         setIsSent(true);
       }
@@ -42,86 +47,131 @@ export default function LoginPage() {
     }
   }
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        {/* Logotyp/titel */}
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-forest-700">
-            Tipspromenaden
+  if (isSent) {
+    return (
+      <div className="animate-slide-up">
+        {/* Envelope illustration */}
+        <div className="text-center mb-8">
+          <div className="text-6xl mb-4" aria-hidden="true">📬</div>
+          <h1 className="text-3xl font-display font-bold text-soil mb-3">
+            Kolla din inkorg!
           </h1>
-          <p className="mt-1 text-sm text-gray-500">Kinnared</p>
+          <p className="text-base text-bark leading-relaxed">
+            Vi har skickat en länk till{" "}
+            <strong className="text-soil">{email}</strong>
+          </p>
+          <p className="text-base text-bark mt-2">
+            Öppna mejlet och klicka på länken för att fortsätta.
+          </p>
         </div>
 
-        {isSent ? (
-          <div className="rounded-xl border border-forest-200 bg-forest-50 p-6 text-center">
-            <CheckCircle className="mx-auto mb-3 h-10 w-10 text-forest-500" />
-            <h2 className="font-semibold text-forest-800">Kolla din e-post!</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Vi har skickat en inloggningslänk till{" "}
-              <span className="font-medium">{email}</span>. Klicka på länken
-              för att logga in.
-            </p>
-            <button
-              onClick={() => {
-                setIsSent(false);
-                setEmail("");
-              }}
-              className="mt-4 text-sm text-forest-600 underline hover:text-forest-800"
-            >
-              Använd annan e-postadress
-            </button>
+        <button
+          onClick={() => {
+            setIsSent(false);
+          }}
+          className="w-full min-h-[56px] px-8 rounded-xl bg-linen border-2 border-forest-600 text-forest-600 text-lg font-semibold transition-all duration-150 hover:bg-forest-pale hover:border-forest-700 active:scale-95 focus-visible:ring-4 focus-visible:ring-forest-300 focus-visible:ring-offset-2 focus-visible:outline-none"
+        >
+          Skicka igen
+        </button>
+
+        <p className="text-center text-sm text-bark mt-4">
+          Fel adress?{" "}
+          <button
+            onClick={() => { setIsSent(false); setEmail(""); }}
+            className="text-forest-600 underline underline-offset-2 hover:text-forest-700"
+          >
+            Ändra e-post
+          </button>
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="animate-fade-in">
+      {/* Logotyp */}
+      <div className="text-center mb-10">
+        <div className="text-5xl mb-4" aria-hidden="true">🌲</div>
+        <h1 className="text-3xl font-display font-bold text-soil">
+          Tipspromenaden
+        </h1>
+        <p className="text-lg text-forest-600 font-medium">i Kinnared</p>
+      </div>
+
+      <p className="text-base text-bark text-center mb-8 leading-relaxed">
+        Logga in med din e-post för att börja promenaden.
+      </p>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+        <div className="flex flex-col gap-2">
+          <label
+            htmlFor="email"
+            className="text-base font-semibold text-soil"
+          >
+            Din e-postadress
+          </label>
+          <div className="relative">
+            <Mail
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-bark/60"
+              aria-hidden="true"
+            />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="namn@exempel.se"
+              aria-describedby="email-hint"
+              className="w-full min-h-[56px] pl-12 pr-4 rounded-xl bg-white border-2 border-sand text-soil text-lg placeholder:text-bark/60 hover:border-forest-300 focus:outline-none focus:border-forest-600 focus:ring-4 focus:ring-forest-200 transition-colors duration-150"
+            />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
-              >
-                E-postadress
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="din@epost.se"
-                  className="w-full rounded-lg border border-gray-300 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20"
-                />
-              </div>
-            </div>
+          <p id="email-hint" className="text-sm text-bark">
+            Vi skickar en inloggningslänk till denna adress.
+          </p>
+        </div>
 
-            {error && (
-              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isLoading || !email}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-forest-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-forest-700 disabled:opacity-60"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Skickar...
-                </>
-              ) : (
-                "Skicka inloggningslänk"
-              )}
-            </button>
-
-            <p className="text-center text-xs text-gray-500">
-              Ny användare? Du registreras automatiskt vid första inloggningen.
-            </p>
-          </form>
+        {error && (
+          <div
+            role="alert"
+            className="rounded-xl bg-brick-pale border border-brick-300 px-4 py-3 text-sm text-brick-700 font-medium"
+          >
+            {error}
+          </div>
         )}
+
+        <button
+          type="submit"
+          disabled={isLoading || !email.trim()}
+          aria-busy={isLoading}
+          className="inline-flex items-center justify-center gap-2 min-h-[56px] px-8 rounded-xl bg-forest-600 text-white text-lg font-semibold shadow-button transition-all duration-150 hover:bg-forest-700 hover:shadow-button-hover active:scale-95 active:shadow-none focus-visible:ring-4 focus-visible:ring-forest-300 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+              <span>Skickar...</span>
+            </>
+          ) : (
+            "Skicka magisk länk"
+          )}
+        </button>
+
+        <p className="text-center text-sm text-bark">
+          Inget lösenord behövs. Ny? Du registreras automatiskt.
+        </p>
+      </form>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <main className="min-h-screen bg-linen flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm">
+        <Suspense>
+          <LoginForm />
+        </Suspense>
       </div>
     </main>
   );

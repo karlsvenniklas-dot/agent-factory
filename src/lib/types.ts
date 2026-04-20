@@ -143,6 +143,10 @@ export type Database = {
         Args: { round_uuid: string };
         Returns: MyProgress;
       };
+      submit_answer: {
+        Args: { p_station_id: string; p_selected_index: number };
+        Returns: { is_correct: boolean; correct_index: number }[];
+      };
     };
     Enums: {
       user_role: UserRole;
