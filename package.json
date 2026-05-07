@@ -1,0 +1,35 @@
+{
+  "name": "spotify-playlist-quiz",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:party": "partykit dev",
+    "dev:all": "concurrently -n next,party -c blue,magenta \"npm:dev\" \"npm:dev:party\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "deploy:party": "partykit deploy"
+  },
+  "dependencies": {
+    "next": "14.2.18",
+    "partysocket": "1.0.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zod": "3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.10",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@types/spotify-web-playback-sdk": "0.1.19",
+    "autoprefixer": "10.4.20",
+    "concurrently": "8.2.2",
+    "eslint": "8.57.0",
+    "eslint-config-next": "14.2.18",
+    "partykit": "0.0.114",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.14",
+    "typescript": "5.5.3"
+  }
+}

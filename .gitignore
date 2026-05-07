@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+build/
+.partykit/
+
+.env
+.env.local
+.env*.local
+
+*.log
+.DS_Store
+.vscode/
+.idea/
+
+next-env.d.ts
+tsconfig.tsbuildinfo
