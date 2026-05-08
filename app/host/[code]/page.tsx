@@ -12,6 +12,8 @@ import {
   getValidAccessToken,
 } from "@/lib/spotify";
 import { startSpotifyLogin } from "@/lib/spotifyAuth";
+import { suggestScore } from "@/lib/scoreGuess";
+import CountdownBar from "@/components/CountdownBar";
 import type { SpotifyTrackInfo } from "@/types/game";
 
 const SpotifyPlayer = dynamic(() => import("@/components/SpotifyPlayer"), { ssr: false });
@@ -21,7 +23,13 @@ interface PageProps {
 }
 
 const DEFAULT_PLAYLIST = process.env.NEXT_PUBLIC_DEFAULT_PLAYLIST_ID ?? "1x6HoQHp7B6jUIqA3zSzgC";
-const SNIPPET_MS = 15000;
+const SNIPPET_MS = 15000; // hur länge musiken faktiskt spelas
+const DURATION_OPTIONS = [
+  { label: "15s", ms: 15_000 },
+  { label: "30s", ms: 30_000 },
+  { label: "45s", ms: 45_000 },
+  { label: "60s", ms: 60_000 },
+];
 
 export default function HostPage({ params }: PageProps) {
   const code = params.code.toUpperCase();
@@ -40,11 +48,12 @@ export default function HostPage({ params }: PageProps) {
   } | null>(null);
   const [playlistInput, setPlaylistInput] = useState(DEFAULT_PLAYLIST);
   const [playlistError, setPlaylistError] = useState<string | null>(null);
-  const [hostName, setHostName] = useState("Värd");
+  const [hostName] = useState("Värd");
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [premiumError, setPremiumError] = useState(false);
+  const [roundDurationMs, setRoundDurationMs] = useState(30_000);
+  const [linkCopied, setLinkCopied] = useState(false);
 
-  // Engångs-init: läs persistent player-id, hämta token om det finns.
   useEffect(() => {
     setPlayerId(getPlayerId());
     getValidAccessToken().then((t) => {
@@ -53,17 +62,19 @@ export default function HostPage({ params }: PageProps) {
     });
   }, []);
 
-  // När vi har player-id + connection: claima värd-rollen.
   useEffect(() => {
     if (!connected || !playerId) return;
     send({ type: "host_claim", playerId, name: hostName });
   }, [connected, playerId, hostName, send]);
 
+  useEffect(() => {
+    if (state) setRoundDurationMs(state.roundDurationMs);
+  }, [state?.roundDurationMs]);
+
   const playableTracks = useMemo(
     () => (tracks ?? []).filter((t) => t.uri),
     [tracks],
   );
-
   const remainingTracks = useMemo(() => {
     if (!state) return playableTracks;
     return playableTracks.filter((t) => !state.trackHistory.includes(t.id));
@@ -102,12 +113,11 @@ export default function HostPage({ params }: PageProps) {
     if (!deviceId || !token) return;
     const track = pickRandomTrack();
     if (!track) return;
-    send({ type: "start_round", track });
+    send({ type: "start_round", track, durationMs: roundDurationMs });
     const player = (window as unknown as {
       __spotifyQuizPlayer?: { play: (uri: string, ms?: number) => Promise<void>; pause: () => Promise<void> };
     }).__spotifyQuizPlayer;
     await player?.play(track.uri, 30000);
-    // Auto-paus efter snutt-tid.
     setTimeout(() => {
       player?.pause();
     }, SNIPPET_MS);
@@ -132,14 +142,28 @@ export default function HostPage({ params }: PageProps) {
     send({ type: "reset" });
   }
 
+  function handleSetDuration(ms: number) {
+    setRoundDurationMs(ms);
+    send({ type: "set_duration", durationMs: ms });
+  }
+
+  async function handleCopyLink() {
+    const url = `${window.location.origin}/play/${code}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      // ignorera
+    }
+  }
+
   const handleReady = useCallback((id: string) => setDeviceId(id), []);
   const handlePremiumError = useCallback(() => setPremiumError(true), []);
 
   // -------- Render --------
 
-  if (!tokenChecked) {
-    return <p className="text-white/60">Initierar…</p>;
-  }
+  if (!tokenChecked) return <p className="text-white/60">Initierar…</p>;
 
   if (!token) {
     return (
@@ -161,26 +185,32 @@ export default function HostPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <RoomHeader code={code} connected={connected} state={state} />
+      <RoomHeader
+        code={code}
+        connected={connected}
+        state={state}
+        onCopyLink={handleCopyLink}
+        linkCopied={linkCopied}
+      />
 
-      {error && <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">{error}</div>}
+      {error && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
+          {error}
+        </div>
+      )}
       {premiumError && (
         <div className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-300">
-          Spotify Web Playback SDK kräver Premium. Logga in med ett Premium-konto för att spela full uppspelning.
+          Spotify Web Playback SDK kräver Premium. Logga in med ett Premium-konto för full uppspelning.
         </div>
       )}
 
-      <SpotifyPlayer
-        accessToken={token}
-        onReady={handleReady}
-        onPremiumError={handlePremiumError}
-      />
+      <SpotifyPlayer accessToken={token} onReady={handleReady} onPremiumError={handlePremiumError} />
 
       {!playlistMeta ? (
         <section className="card space-y-3">
           <h2 className="text-xl font-bold">Välj spellista</h2>
           <p className="text-sm text-white/60">
-            Klistra in en Spotify playlist-URL eller låt det vara fyllt med standard-spellistan.
+            Klistra in en Spotify playlist-URL, eller använd standard-spellistan som redan är ifylld.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input
@@ -189,11 +219,7 @@ export default function HostPage({ params }: PageProps) {
               placeholder="https://open.spotify.com/playlist/..."
               className="input flex-1"
             />
-            <button
-              onClick={handleLoadPlaylist}
-              disabled={loadingTracks}
-              className="btn-primary"
-            >
+            <button onClick={handleLoadPlaylist} disabled={loadingTracks} className="btn-primary">
               {loadingTracks ? "Laddar…" : "Ladda spellista"}
             </button>
           </div>
@@ -220,18 +246,15 @@ export default function HostPage({ params }: PageProps) {
         />
       )}
 
-      {state && (
-        <PlayersPanel
-          state={state}
-          onKick={(id) => send({ type: "kick", playerId: id })}
-        />
-      )}
+      {state && <PlayersPanel state={state} onKick={(id) => send({ type: "kick", playerId: id })} />}
 
       {state && playlistMeta && (
         <GameControls
           state={state}
           remaining={remainingTracks.length}
           deviceReady={Boolean(deviceId)}
+          roundDurationMs={roundDurationMs}
+          onSetDuration={handleSetDuration}
           onPlayNext={handlePlayNext}
           onReveal={handleReveal}
           onNextRound={handleNextRound}
@@ -252,10 +275,14 @@ function RoomHeader({
   code,
   connected,
   state,
+  onCopyLink,
+  linkCopied,
 }: {
   code: string;
   connected: boolean;
   state: ReturnType<typeof useRoom>["state"];
+  onCopyLink: () => void;
+  linkCopied: boolean;
 }) {
   return (
     <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -263,10 +290,12 @@ function RoomHeader({
         <p className="text-xs uppercase tracking-widest text-white/40">Rumkod</p>
         <p className="text-5xl font-black tracking-widest text-spotify-green">{code}</p>
         <p className="mt-1 text-sm text-white/60">
-          Be spelarna att gå till{" "}
-          <code className="rounded bg-white/10 px-1">/play/{code}</code> på sin
-          enhet.
+          Spelarna går till{" "}
+          <code className="rounded bg-white/10 px-1">/play/{code}</code> på sin enhet.
         </p>
+        <button onClick={onCopyLink} className="btn-ghost mt-2 text-xs">
+          {linkCopied ? "✓ Kopierat" : "Kopiera länk till spelare"}
+        </button>
       </div>
       <div className="flex flex-col items-end gap-1 text-xs">
         <span className={`pill ${connected ? "" : "opacity-50"}`}>
@@ -275,8 +304,7 @@ function RoomHeader({
         </span>
         {state && (
           <span className="text-white/50">
-            {state.players.filter((p) => !p.isHost).length} spelare ·{" "}
-            {state.teams.length} lag
+            {state.players.filter((p) => !p.isHost).length} spelare · {state.teams.length} lag
           </span>
         )}
       </div>
@@ -347,7 +375,10 @@ function PlayersPanel({
               <span className="font-semibold">{p.name}</span>
               {p.team && <span className="pill">{p.team}</span>}
             </span>
-            <button onClick={() => onKick(p.id)} className="text-xs text-white/40 hover:text-red-400">
+            <button
+              onClick={() => onKick(p.id)}
+              className="text-xs text-white/40 hover:text-red-400"
+            >
               Ta bort
             </button>
           </li>
@@ -361,6 +392,8 @@ function GameControls({
   state,
   remaining,
   deviceReady,
+  roundDurationMs,
+  onSetDuration,
   onPlayNext,
   onReveal,
   onNextRound,
@@ -369,41 +402,75 @@ function GameControls({
   state: NonNullable<ReturnType<typeof useRoom>["state"]>;
   remaining: number;
   deviceReady: boolean;
+  roundDurationMs: number;
+  onSetDuration: (ms: number) => void;
   onPlayNext: () => void;
   onReveal: () => void;
   onNextRound: () => void;
   onReset: () => void;
 }) {
+  const totalPlayers = state.players.filter((p) => !p.isHost).length;
+  const guesses = state.guesses.length;
+  const allGuessed = totalPlayers > 0 && guesses >= totalPlayers;
+
   return (
-    <section className="card flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <p className="text-xs uppercase text-white/40">Runda</p>
-        <p className="text-2xl font-bold">{state.round}</p>
+    <section className="card space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase text-white/40">Runda</p>
+          <p className="text-2xl font-bold">{state.round}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {state.phase === "idle" && (
+            <>
+              <div className="flex items-center gap-1 rounded-full bg-white/5 p-1">
+                {DURATION_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.ms}
+                    onClick={() => onSetDuration(opt.ms)}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      roundDurationMs === opt.ms
+                        ? "bg-spotify-green text-black"
+                        : "text-white/70 hover:bg-white/10"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={onPlayNext}
+                disabled={!deviceReady || remaining === 0}
+                className="btn-primary"
+              >
+                ▶ Spela nästa låt ({remaining} kvar)
+              </button>
+            </>
+          )}
+          {state.phase === "playing" && (
+            <button onClick={onReveal} className="btn-primary">
+              Visa svar
+              {allGuessed && <span className="ml-2 text-xs">· alla har gissat!</span>}
+            </button>
+          )}
+          {state.phase === "reveal" && (
+            <button onClick={onNextRound} className="btn-primary">
+              Nästa runda
+            </button>
+          )}
+          <button onClick={onReset} className="btn-ghost text-xs">
+            Nollställ allt
+          </button>
+        </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {state.phase === "idle" && (
-          <button
-            onClick={onPlayNext}
-            disabled={!deviceReady || remaining === 0}
-            className="btn-primary"
-          >
-            ▶ Spela nästa låt ({remaining} kvar)
-          </button>
-        )}
-        {state.phase === "playing" && (
-          <button onClick={onReveal} className="btn-primary">
-            Visa svar
-          </button>
-        )}
-        {state.phase === "reveal" && (
-          <button onClick={onNextRound} className="btn-primary">
-            Nästa runda
-          </button>
-        )}
-        <button onClick={onReset} className="btn-ghost text-xs">
-          Nollställ allt
-        </button>
-      </div>
+      {state.phase === "playing" && (
+        <CountdownBar startedAt={state.roundStartedAt} durationMs={state.roundDurationMs} />
+      )}
+      {state.phase === "playing" && (
+        <p className="text-xs text-white/50">
+          {guesses} av {totalPlayers} har gissat
+        </p>
+      )}
     </section>
   );
 }
@@ -434,8 +501,8 @@ function RoundPanel({
           <p className="text-xs uppercase tracking-widest text-white/40">
             {revealed ? "Rätt svar" : "Spelar nu"}
           </p>
-          <p className={`text-2xl font-bold ${revealed ? "" : "blur-md select-none"}`}>{track.name}</p>
-          <p className={`text-sm text-white/60 ${revealed ? "" : "blur-md select-none"}`}>
+          <p className={`text-2xl font-bold ${revealed ? "" : "select-none blur-md"}`}>{track.name}</p>
+          <p className={`text-sm text-white/60 ${revealed ? "" : "select-none blur-md"}`}>
             {track.artists.join(", ")}
           </p>
         </div>
@@ -451,35 +518,66 @@ function RoundPanel({
           <ul className="space-y-2">
             {[...state.guesses]
               .sort((a, b) => a.submittedAt - b.submittedAt)
-              .map((g) => (
-                <li
-                  key={g.playerId}
-                  className="flex flex-wrap items-center gap-2 rounded-lg bg-black/40 px-3 py-2"
-                >
-                  <span className="font-semibold">{g.playerName}</span>
-                  {g.team && <span className="pill">{g.team}</span>}
-                  <span className="flex-1 italic text-white/80">"{g.text}"</span>
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map((pts) => (
-                      <button
-                        key={pts}
-                        onClick={() => onAward(g.playerId, pts)}
-                        className={`h-8 w-8 rounded-full text-sm font-bold transition ${
-                          g.awarded === pts
-                            ? "bg-spotify-green text-black"
-                            : "bg-white/10 hover:bg-white/20"
-                        }`}
-                        title={pts === 0 ? "Fel" : pts === 1 ? "1 poäng" : "2 poäng"}
-                      >
-                        {pts}
-                      </button>
-                    ))}
-                  </div>
-                </li>
-              ))}
+              .map((g) => {
+                const suggestion = suggestScore(g.text, track.name, track.artists);
+                return (
+                  <li
+                    key={g.playerId}
+                    className="flex flex-wrap items-center gap-2 rounded-lg bg-black/40 px-3 py-2"
+                  >
+                    <span className="font-semibold">{g.playerName}</span>
+                    {g.team && <span className="pill">{g.team}</span>}
+                    <span className="flex-1 italic text-white/80">"{g.text}"</span>
+                    <span
+                      className={`text-xs ${
+                        suggestion.points === 2
+                          ? "text-spotify-green"
+                          : suggestion.points === 1
+                            ? "text-yellow-400"
+                            : "text-white/40"
+                      }`}
+                      title={suggestion.reason}
+                    >
+                      Förslag: {suggestion.points}p
+                    </span>
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map((pts) => (
+                        <button
+                          key={pts}
+                          onClick={() => onAward(g.playerId, pts)}
+                          className={`h-8 w-8 rounded-full text-sm font-bold transition ${
+                            g.awarded === pts
+                              ? "bg-spotify-green text-black"
+                              : suggestion.points === pts && g.awarded === 0
+                                ? "bg-white/20 ring-2 ring-spotify-green/40 hover:bg-white/30"
+                                : "bg-white/10 hover:bg-white/20"
+                          }`}
+                          title={pts === 0 ? "Fel" : pts === 1 ? "1 poäng" : "2 poäng"}
+                        >
+                          {pts}
+                        </button>
+                      ))}
+                    </div>
+                  </li>
+                );
+              })}
           </ul>
         )}
       </div>
+      {state.phase === "playing" && state.guesses.length > 0 && (
+        <button
+          onClick={() => {
+            // Acceptera alla förslag på en gång
+            for (const g of state.guesses) {
+              const s = suggestScore(g.text, track.name, track.artists);
+              if (g.awarded !== s.points) onAward(g.playerId, s.points);
+            }
+          }}
+          className="btn-secondary text-sm"
+        >
+          Godkänn alla förslag
+        </button>
+      )}
     </section>
   );
 }
@@ -489,12 +587,9 @@ function Leaderboard({
 }: {
   state: NonNullable<ReturnType<typeof useRoom>["state"]>;
 }) {
-  const players = [...state.players]
-    .filter((p) => !p.isHost)
-    .sort((a, b) => b.score - a.score);
+  const players = [...state.players].filter((p) => !p.isHost).sort((a, b) => b.score - a.score);
   if (players.length === 0) return null;
 
-  // Aggregera per lag.
   const teamScores = new Map<string, number>();
   for (const p of players) {
     if (!p.team) continue;

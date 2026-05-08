@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRoom } from "@/lib/useRoom";
 import { getPlayerId } from "@/lib/playerId";
+import CountdownBar from "@/components/CountdownBar";
 
 interface PageProps {
   params: { code: string };
@@ -157,6 +158,7 @@ export default function PlayPage({ params }: PageProps) {
             <p className="mt-4 font-bold">Lyssna och gissa!</p>
             <p className="text-sm text-white/50">Vad är låten?</p>
           </div>
+          <CountdownBar startedAt={state.roundStartedAt} durationMs={state.roundDurationMs} />
           <form onSubmit={handleSubmitGuess} className="flex gap-2">
             <input
               value={guess}

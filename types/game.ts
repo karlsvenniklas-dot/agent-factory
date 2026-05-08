@@ -39,6 +39,8 @@ export interface RoomState {
   currentTrack: SpotifyTrackInfo | null;
   guesses: Guess[];
   trackHistory: string[]; // ids på låtar som redan spelats
+  roundStartedAt: number | null; // ms epoch när snutten startade, för synkad timer
+  roundDurationMs: number; // hur länge spelarna får gissa
 }
 
 // ===== Klient → server =====
@@ -47,12 +49,13 @@ export type ClientMessage =
   | { type: "join"; playerId: string; name: string; team?: string | null }
   | { type: "rename"; playerId: string; name: string }
   | { type: "set_team"; playerId: string; team: string | null }
-  | { type: "start_round"; track: SpotifyTrackInfo }
+  | { type: "start_round"; track: SpotifyTrackInfo; durationMs?: number }
   | { type: "submit_guess"; playerId: string; text: string }
   | { type: "award"; playerId: string; points: number }
   | { type: "reveal" }
   | { type: "next_round" }
   | { type: "kick"; playerId: string }
+  | { type: "set_duration"; durationMs: number }
   | { type: "reset" };
 
 // ===== Server → klient =====

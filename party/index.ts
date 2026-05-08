@@ -23,6 +23,8 @@ export default class QuizRoom implements Party.Server {
       currentTrack: null,
       guesses: [],
       trackHistory: [],
+      roundStartedAt: null,
+      roundDurationMs: 30_000,
     };
   }
 
@@ -61,7 +63,10 @@ export default class QuizRoom implements Party.Server {
         this.handleSetTeam(msg.playerId, msg.team);
         break;
       case "start_round":
-        this.handleStartRound(sender, msg.track);
+        this.handleStartRound(sender, msg.track, msg.durationMs);
+        break;
+      case "set_duration":
+        this.handleSetDuration(sender, msg.durationMs);
         break;
       case "submit_guess":
         this.handleGuess(msg.playerId, msg.text);
@@ -159,16 +164,31 @@ export default class QuizRoom implements Party.Server {
     this.broadcastState();
   }
 
-  private handleStartRound(conn: Party.Connection, track: RoomState["currentTrack"]) {
+  private handleStartRound(
+    conn: Party.Connection,
+    track: RoomState["currentTrack"],
+    durationMs?: number,
+  ) {
     if (!this.isHost(conn)) return;
     if (!track) return;
     this.state.phase = "playing";
     this.state.round += 1;
     this.state.currentTrack = track;
     this.state.guesses = [];
+    this.state.roundStartedAt = Date.now();
+    if (typeof durationMs === "number" && durationMs > 0) {
+      this.state.roundDurationMs = Math.min(120_000, Math.max(5_000, durationMs));
+    }
     if (!this.state.trackHistory.includes(track.id)) {
       this.state.trackHistory.push(track.id);
     }
+    this.broadcastState();
+  }
+
+  private handleSetDuration(conn: Party.Connection, durationMs: number) {
+    if (!this.isHost(conn)) return;
+    if (typeof durationMs !== "number" || durationMs <= 0) return;
+    this.state.roundDurationMs = Math.min(120_000, Math.max(5_000, durationMs));
     this.broadcastState();
   }
 
@@ -223,6 +243,7 @@ export default class QuizRoom implements Party.Server {
     this.state.phase = "idle";
     this.state.currentTrack = null;
     this.state.guesses = [];
+    this.state.roundStartedAt = null;
     this.broadcastState();
   }
 
@@ -240,6 +261,7 @@ export default class QuizRoom implements Party.Server {
     this.state.currentTrack = null;
     this.state.guesses = [];
     this.state.trackHistory = [];
+    this.state.roundStartedAt = null;
     this.broadcastState();
   }
 
