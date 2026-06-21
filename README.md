@@ -21,6 +21,24 @@ Then open <http://localhost:5188>.
 - Frontend: Vite + MapLibre GL (dark CARTO basemap, no API key needed).
 - Backend relay: `http://localhost:8088`, WebSocket at `/live`.
 
+### Open it on your phone
+
+The UI is responsive (compact HUD, scrollable layer list, bottom-sheet chat,
+notch-safe insets), so it's built to be used on a phone. To reach it from a
+phone, put the phone on the **same Wi-Fi** as the computer running it:
+
+- **Dev:** `npm run dev` now listens on every interface, so Vite prints a
+  `Network:` URL like `http://192.168.x.x:5188` — open that on the phone.
+- **Production (recommended for phones):** `npm run build && npm start`, then
+  open `http://<computer-ip>:8088` on the phone. The Node server serves the
+  app and the `/live` socket on one port, so there's nothing else to forward.
+
+Find `<computer-ip>` with `ipconfig getifaddr en0` (macOS), `hostname -I`
+(Linux), or `ipconfig` (Windows). If it won't connect, the computer's firewall
+is likely blocking the port. To reach it from *outside* your network (e.g.
+mobile data), put a tunnel in front of `:8088`, e.g. `npx cloudflared tunnel
+--url http://localhost:8088` and open the URL it prints.
+
 ### Source modes
 
 The backend chooses where strikes come from via `BLITZ_MODE`:

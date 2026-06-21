@@ -502,9 +502,63 @@ body.radio .maplibregl-ctrl {
 .maplibregl-ctrl-attrib { background: rgba(5, 6, 10, 0.6) !important; }
 .maplibregl-ctrl-attrib a { color: var(--ink-dim) !important; }
 
-@media (max-width: 620px) {
-  .hud { min-width: 0; right: 16px; }
-  .stats { grid-template-columns: 1fr 1fr 1fr; }
-  .layers { width: auto; max-width: 60vw; }
-  .legend { font-size: 10px; gap: 8px; flex-wrap: wrap; max-width: 60vw; }
+/* Phones / narrow screens -------------------------------------------- */
+@media (max-width: 700px) {
+  /* HUD: compact card in the top-left, subtitle dropped to save width so it
+     doesn't collide with the layers panel on the right. */
+  .hud {
+    top: calc(10px + env(safe-area-inset-top));
+    left: calc(10px + env(safe-area-inset-left));
+    right: auto;
+    min-width: 0;
+    max-width: 38vw;
+    padding: 9px 11px;
+  }
+  .brand { gap: 8px; }
+  .brand .bolt { font-size: 20px; }
+  .brand h1 { font-size: 14px; letter-spacing: 1.5px; }
+  .brand .sub { display: none; }
+  .stats { grid-template-columns: 1fr; gap: 5px; margin-top: 9px; }
+  .stats dt { font-size: 8.5px; }
+  .stats dd { font-size: 14px; }
+  #stat-source { font-size: 11px; }
+
+  /* Layers: top-right, narrower, and scrollable so the long toggle list never
+     runs off the bottom of a short screen. The explainer note is hidden here. */
+  .layers {
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(10px + env(safe-area-inset-right));
+    left: auto;
+    width: auto;
+    max-width: 56vw;
+    max-height: calc(100vh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 11px;
+    gap: 7px;
+  }
+  .layers .toggles { gap: 6px; }
+  .toggle { font-size: 12px; padding: 6px 11px 6px 6px; }
+  .layers .note { display: none; }
+
+  /* Ask the Planet: a bottom sheet that spans the width instead of a fixed
+     360px panel that would overflow a phone. */
+  .ask {
+    top: auto;
+    left: calc(10px + env(safe-area-inset-left));
+    right: calc(10px + env(safe-area-inset-right));
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: 65vh;
+  }
+  .ask-log { max-height: 42vh; }
+
+  .legend {
+    left: calc(10px + env(safe-area-inset-left));
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    font-size: 10px; gap: 8px; flex-wrap: wrap; max-width: 56vw;
+  }
+  .deskticker { max-width: 92vw; }
+  .radar-ctl { max-width: 92vw; }
+  .radar-ctl input[type="range"] { width: 42vw; }
 }

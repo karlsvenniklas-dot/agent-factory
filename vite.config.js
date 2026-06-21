@@ -5,6 +5,9 @@ import { defineConfig } from 'vite'
 // same Node process serves the built assets and the /live socket on one origin.
 export default defineConfig({
   server: {
+    // Listen on all interfaces so a phone on the same Wi-Fi can reach the dev
+    // server (Vite prints a "Network:" URL on startup to open on the phone).
+    host: true,
     port: 5188,
     strictPort: true,
     proxy: {
