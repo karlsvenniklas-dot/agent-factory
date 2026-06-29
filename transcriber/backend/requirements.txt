@@ -1,0 +1,49 @@
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+websockets==13.1
+
+# Database
+sqlalchemy==2.0.36
+alembic==1.14.0
+asyncpg==0.30.0
+psycopg2-binary==2.9.10
+
+# Task queue
+celery==5.4.0
+redis==5.2.1
+
+# AI / ML
+openai-whisper==20240930          # fallback if whisper.cpp not available
+pyannote.audio==3.3.2
+speechbrain==1.0.2
+torch>=2.1.0
+torchaudio>=2.1.0
+
+# Audio processing
+ffmpeg-python==0.2.0
+pydub==0.25.1
+soundfile==0.12.1
+librosa==0.10.2
+
+# LLM clients
+httpx==0.28.1
+ollama==0.4.4
+
+# Export formats
+reportlab==4.2.5                  # PDF
+python-docx==1.1.2                # DOCX
+webvtt-py==0.4.6
+
+# Encryption
+cryptography==43.0.3
+
+# Utilities
+python-dotenv==1.0.1
+pydantic==2.10.3
+pydantic-settings==2.6.1
+aiofiles==24.1.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+slowapi==0.1.9
